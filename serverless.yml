@@ -1,0 +1,175 @@
+org: flashcoffee
+app: flash-coffee-v2
+useDotenv: true
+service: post-order-boilerplate
+
+custom:
+  # alerts:
+  #   dashboards: true
+  stages:
+    dev:
+      region: 'ap-southeast-1'
+      domain: 'api.flash-coffee.xyz'
+      certificate: '*.flash-coffee.xyz'
+      basePath: 'post-order-boilerplate'
+      userPool: 'ap-southeast-1_qpiRBc03U'
+      warmup:
+        enabled: false
+    prod:
+      region: 'ap-southeast-1'
+      domain: 'api.flash-coffee.com'
+      certificate: '*.flash-coffee.com'
+      basePath: 'post-order-boilerplate'
+      userPool: 'ap-southeast-1_0aqnSvbnW'
+      warmup:
+        enabled: true
+        events:
+          - schedule: cron(0/4 23-14 ? * * *)
+      stuckSchedule: cron(0/4 23-14 ? * * *)
+  customDomain:
+    domainName: ${self:custom.stages.${self:provider.stage}.domain}
+    basePath: '${self:custom.stages.${self:provider.stage}.basePath}'
+    stage: ${self:provider.stage}
+    certificateName: ${self:custom.stages.${self:provider.stage}.certificate}
+    createRoute53Record: true
+    endpointType: 'regional'
+  # warmup:
+  #   default: ${self:custom.stages.${self:provider.stage}.warmup}
+  region: ${self:custom.stages.${self:provider.stage}.region, 'ap-southeast-1'}
+  optimize:
+    external: ['@prisma/client', '.prisma/client']
+
+provider:
+  name: aws
+  endpointType: REGIONAL
+  region: ap-southeast-1
+  runtime: nodejs12.x
+  memorySize: 256
+  timeout: 30
+  stage: ${opt:stage, 'dev'}
+  role: arn:aws:iam::${aws:accountId}:role/lambda-role
+  deploymentBucket: 
+    name: flashcoffee-deployment
+  lambdaHashingVersion: '20201221'
+  environment:
+    BASE_PATH: '${self:custom.stages.${self:provider.stage}.basePath}'
+    STAGE: ${self:provider.stage}
+    AWS_ACCOUNT_ID: '${aws:accountId}'
+    DOMAIN: https://${self:custom.stages.${self:provider.stage}.domain}
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-domain-manager
+  - serverless-plugin-optimize
+  - serverless-offline
+  # - serverless-plugin-warmup
+  # - serverless-plugin-aws-alerts
+  # - serverless-plugin-canary-deployments
+
+
+package:
+  individually: true
+  exclude:
+    - .git/**
+    - src/**
+    - test/**
+    - e2e/**
+    - views/**
+    - docker-postgres-init/**
+    - coverage/**
+    - nodemon.json
+    - README.md
+    - ./*.json
+    - ./*.log
+    - ./*.yml
+    - ./*.lock
+  include:
+    - package.json
+
+functions:
+  main:
+    # warmup:
+    #   default:
+    #     prewarm: true
+    handler: dist/handler.handler
+    events:
+      - http:
+          method: GET
+          path: /todo
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:custom.stages.${self:provider.stage}.userPool}
+      - http:
+          method: POST
+          path: /todo
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:custom.stages.${self:provider.stage}.userPool}
+      - http:
+          method: GET
+          path: /todo/{id}
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:custom.stages.${self:provider.stage}.userPool}
+      - http:
+          method: PATCH
+          path: /todo/{id}
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:custom.stages.${self:provider.stage}.userPool}
+      - http:
+          method: DELETE
+          path: /todo/{id}
+          cors:
+            origin: '*'
+            headers:
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+          authorizer:
+            arn: arn:aws:cognito-idp:${self:provider.region}:${aws:accountId}:userpool/${self:custom.stages.${self:provider.stage}.userPool}
+    # alarms:
+    #   - functionErrors
+    # deploymentSettings:
+    #   type: Linear10PercentEvery1Minute
+    #   alias: Live
+    #   alarms:
+    #     - MainFunctionErrorsAlarm
+
+
+  
