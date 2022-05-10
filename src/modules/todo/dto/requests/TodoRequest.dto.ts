@@ -13,6 +13,7 @@ export class TodoRequest {
   content?: string;
 
   @ApiPropertyOptional()
+  @IsOptional()
   @IsBoolean()
   active?: boolean;
 }
