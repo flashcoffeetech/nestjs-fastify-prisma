@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  // Version,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
@@ -13,27 +14,31 @@ import { TodoService } from './todo.service';
 import { TodoRequest } from './dto/requests/TodoRequest.dto';
 
 @ApiTags('Todos')
-@Controller('todo')
+@Controller({
+  version: ['1'],
+})
 export class TodoController {
   constructor(private readonly todoService: TodoService) {}
 
-  @Post()
+  @Post('todo')
   create(@Body() createTodoDto: TodoRequest) {
     return this.todoService.create(createTodoDto);
   }
 
-  @Get()
+  // @Version('1')
+  @Get('todo')
   findAll() {
     const params = {};
     return this.todoService.findAll(params);
   }
 
-  @Get(':id')
+  // @Version('1')
+  @Get('todo/:id')
   findOne(@Param('id') id: number) {
     return this.todoService.findOne(+id);
   }
 
-  @Patch(':id')
+  @Patch('todo/:id')
   update(@Param('id') id: number, @Body() data: TodoRequest) {
     const params = {
       id: +id,
@@ -42,7 +47,7 @@ export class TodoController {
     return this.todoService.update(params);
   }
 
-  @Delete(':id')
+  @Delete('todo/:id')
   remove(@Param('id') id: number) {
     return this.todoService.remove(+id);
   }

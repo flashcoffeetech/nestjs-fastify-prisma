@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+import { VersioningType } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -20,6 +21,10 @@ export async function bootstrap({ config }): Promise<FastifyInstance> {
     }),
     new FastifyAdapter(instance),
   );
+
+  app.enableVersioning({
+    type: VersioningType.URI,
+  });
 
   if (basePath) {
     app.setGlobalPrefix(basePath);
